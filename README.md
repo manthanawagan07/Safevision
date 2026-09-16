@@ -502,7 +502,7 @@ Submitted as academic coursework for the Computer Vision course.
 
 ## Author 
 
-Name - Manthan Awagan
-Reg. No. - 24BAI10381
-Course - Computer Vision
-Date - 16 Sept 2026
+- Name : Manthan Awagan
+- Reg. No. : 24BAI10381
+- Course : Computer Vision
+- Date : 16 Sept 2026
