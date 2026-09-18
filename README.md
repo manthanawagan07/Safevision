@@ -353,24 +353,17 @@ The project incorporates **five** key functional modules .
 
 ## 9. Non-functional requirements
 
+## Requirements
+
 | # | Requirement | How it is met | Where |
-
 |---|---|---|---|
-
-| 1 | **Security** | Passwords are hashed with PBKDF2‑HMAC‑SHA256 using 100,000 iterations and a unique 16‑byte random salt for each user. Comparisons are done in time with hmac.compare_digest to avoid timing attacks. Destructive actions are guarded by role‑based checks. All SQL is parameterised to stop injection. Passwords can be read from environment variables or a hidden prompt so they never show up in history. | `Src/auth.py` `src/records.py` |
-
-| 2 | **Error handling** | Custom error types AuthError, PreprocessingError, DetectionError, VideoError are defined. If a file cannot be read the system skips it of stopping the whole batch. The main program catches any error prints a clear message and exits with a specific code: 0 for success 1 for a general error, 2 for authentication failure. | `Main.py` and all modules
-
-| 3 | **Logging & monitoring** | A single logger writes to a file that rotates when it reaches 2 MB keeping up to three files. It records every detection, login, data change and error with time and level. The screen only shows warnings or higher so the command line stays clear. | `Src/logger_setup.py`
-
-| 4 | **Performance** | A small CNN with 200,000 parameters trains in less than one minute on a CPU. The Haar cascade is much lighter than a detector. The --every‑n option skips frames to reduce video processing costs. The trained model and cascade are loaded once and stored globally not for each image. | `Src/model.py` `src/detection.py` `src/video_stream.py` |
-
-| 5 | **Reliability** | The system does not fail silently. If no trained model exists it throws an error that tells the user what to do. If no face is found it uses the image and marks this in the output. Try/ blocks make sure that video capture and writing are closed even if an error or interrupt happens. | `Src/detection.py` `src/video_stream.py` |
-
-| 6 | **Maintainability** | Modules have one job each and the code is split into layers. All adjustable settings live in config.py. Type hints and docstrings are everywhere. There are 42 unit tests and naming is consistent. | Whole project |
-
-| 7 | **Usability & resource efficiency** | Every subcommand shows a message with --help. The init command works with no arguments. By default the program runs without opening a window so it works over SSH; you can enable a display, with --display. TensorFlow is loaded when needed making commands like records start quickly. SQLite is used directly. No database server is required. | `Main.py` `src/model.py` |
-
+| 1 | Security | Passwords are hashed with PBKDF2‑HMAC‑SHA256 using 100,000 iterations and a unique 16‑byte random salt for each user. Comparisons are done in time with hmac.compare_digest to avoid timing attacks. Destructive actions are guarded by role‑based checks. All SQL is parameterised to stop injection. Passwords can be read from environment variables or a hidden prompt so they never show up in history. | Src/auth.py src/records.py |
+| 2 | Error handling | Custom error types AuthError, PreprocessingError, DetectionError, VideoError are defined. If a file cannot be read the system skips it of stopping the whole batch. The main program catches any error prints a clear message and exits with a specific code: 0 for success 1 for a general error, 2 for authentication failure. | Main.py and all modules |
+| 3 | Logging & monitoring | A single logger writes to a file that rotates when it reaches 2 MB keeping up to three files. It records every detection, login, data change and error with time and level. The screen only shows warnings or higher so the command line stays clear. | Src/logger_setup.py |
+| 4 | Performance | A small CNN with 200,000 parameters trains in less than one minute on a CPU. The Haar cascade is much lighter than a detector. The --every‑n option skips frames to reduce video processing costs. The trained model and cascade are loaded once and stored globally not for each image. | Src/model.py src/detection.py src/video_stream.py |
+| 5 | Reliability | The system does not fail silently. If no trained model exists it throws an error that tells the user what to do. If no face is found it uses the image and marks this in the output. Try/ blocks make sure that video capture and writing are closed even if an error or interrupt happens. | Src/detection.py src/video_stream.py |
+| 6 | Maintainability | Modules have one job each and the code is split into layers. All adjustable settings live in config.py. Type hints and docstrings are everywhere. There are 42 unit tests and naming is consistent. | Whole project |
+| 7 | Usability & resource efficiency | Every subcommand shows a message with --help. The init command works with no arguments. By default the program runs without opening a window so it works over SSH; you can enable a display, with --display. TensorFlow is loaded when needed making commands like records start quickly. SQLite is used directly. No database server is required. | Main.py src/model.py |
 ---
 
 ## 10. Using a real dataset
