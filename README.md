@@ -1,12 +1,12 @@
 # SafeVision — Face Mask Compliance Detection System
 
-A command-line Computer Vision system that detects faces in images or video,
-classifies each face as **wearing a mask** or **not wearing a mask** using a
-Convolutional Neural Network, stores every detection in a database, and
-generates compliance analytics reports.
+A CLI-based Computer Vision application to detect faces in images/videos,
+categorize each detected face as either a **mask-wearing** or
+**mask-less** face with the help of a Convolutional Neural Network, log all
+detections into a database, and create compliance analytics reports.
 
-Built for the **Computer Vision** course project. Everything runs from a
-terminal — no GUI required.
+Developed as a project for the **Computer Vision** course. All operations are
+performed using only the command line interface.
 
 ---
 
@@ -30,9 +30,9 @@ terminal — no GUI required.
 
 ## 1. What the system does
 
-A workplace, campus or clinic needs to know whether people entering a space are
-wearing face masks. Manually watching a camera feed does not scale. SafeVision
-automates the check:
+The organization should determine whether individuals who enter the space have
+a face mask on or not. Manual monitoring of the live video feed cannot be scaled;
+SafeVision automates this task:
 
 ```
 image / video frame
@@ -46,9 +46,8 @@ image / video frame
  persisted to SQLite  →  compliance report (CSV + summary)
 ```
 
-Every detection is attributed to the logged-in user and timestamped, so the
-record set is auditable and a human reviewer can correct a misclassification.
-
+Each detection is assigned to the user and marked with a timestamp so that the
+set of records becomes auditable and a human can revise the mislabeling.
 ---
 
 ## 2. Requirements
@@ -340,39 +339,43 @@ below it, which keeps modules independently testable.
 
 ## 8. Functional requirements
 
-The project implements **five** major functional modules (three were required).
+The project incorporates **five** key functional modules .
 
-| # | Module | File | Capability |
+| # | Module Name | Location | Functionality |
 |---|---|---|---|
-| 1 | **User management** | `src/auth.py` | Registration, login, PBKDF2 password hashing, `admin`/`operator` role-based access control |
-| 2 | **Data input & processing** | `src/preprocessing.py`, `src/video_stream.py` | Load images, folders, video files and webcam streams; resize, normalize, crop, augment; frame skipping |
-| 3 | **Prediction / classification** | `src/detection.py`, `src/model.py` | Haar-cascade face detection + CNN mask classification with confidence scores and annotated output |
-| 4 | **CRUD operations** | `src/records.py` | Create (automatic on detection), Read (list/filter/get), Update (reviewer label correction), Delete (admin-only) |
-| 5 | **Reporting & analytics** | `src/analytics.py`, `src/evaluation.py` | Compliance rate, per-source breakdown, CSV export; model accuracy / precision / recall / F1 / confusion matrix |
+| 1 | **User management** | `src/auth.py` | User registration, logging in, password hashing (using PBKDF2 algorithm), user roles (`admin`/`operator`) |
+| 2 | **Input/output and data processing** | `src/preprocessing.py`, `src/video_stream.py` | Load image(s)/directory/videofile/webcam, preprocess (resizing, normalizing, cropping, data augmentation), skipping frames |
+| 3 | **Classification/prediction** | `src/detection.py`, `src/model.py` | Face detection using Haar-cascade + mask classification using CNN with confidence values |
+| 4 | **CRUD operations** | `src/records.py` | Creation (automatic when detecting something), Reading (listing, filtering, retrieval), Updating (reviewing and correcting label), Deletion (by admin only) |
+| 5 | **Analytics** | `src/analytics.py`, `src/evaluation.py` | Complaince rate statistics, statistics by source, export to CSV file; model evaluation |
 
 ---
 
 ## 9. Non-functional requirements
 
-Seven are implemented (four were required).
-
 | # | Requirement | How it is met | Where |
+
 |---|---|---|---|
-| 1 | **Security** | Passwords hashed with PBKDF2-HMAC-SHA256, 100,000 iterations, unique 16-byte random salt per user; constant-time comparison via `hmac.compare_digest` (resists timing attacks); role-based authorization on destructive operations; parameterized SQL everywhere (no injection); passwords readable from env vars or a hidden prompt so they need not appear in shell history | `src/auth.py`, `src/records.py` |
-| 2 | **Error handling** | Custom exception types (`AuthError`, `PreprocessingError`, `DetectionError`, `VideoError`); unreadable files are skipped rather than aborting a batch; a top-level handler in `main.py` converts any unexpected exception into a clean message plus a distinct exit code (`0` OK, `1` error, `2` auth failure) for scripting | `main.py` and all modules |
-| 3 | **Logging & monitoring** | Single rotating-file logger (2 MB × 3 backups) capturing every detection, login attempt, CRUD operation and error, with timestamps and severity; console shows only warnings and above to keep CLI output readable | `src/logger_setup.py` |
-| 4 | **Performance** | Compact CNN (~0.2M parameters) trains in under a minute on CPU; Haar cascade is far cheaper than a deep detector; `--every-n` frame skipping bounds video cost; the trained model and cascade are loaded once and cached in module-level globals rather than per image | `src/model.py`, `src/detection.py`, `src/video_stream.py` |
-| 5 | **Reliability** | Fails safe rather than failing silently — with no trained model the system raises a typed error with an actionable instruction instead of emitting unreliable guesses; whole-image fallback when no face is found, explicitly flagged in output; `try/finally` guarantees video capture and writer handles are released even on exception or interrupt | `src/detection.py`, `src/video_stream.py` |
-| 6 | **Maintainability** | Layered architecture with single-responsibility modules; all tunables centralized in `config.py`; type hints and docstrings throughout; 42 unit tests; consistent naming | whole project |
-| 7 | **Usability & resource efficiency** | Discoverable `--help` on every subcommand; sensible defaults so `init` needs no arguments; headless by default (`--display` is opt-in) so it runs over SSH; TensorFlow imported lazily so lightweight commands like `records` start fast; SQLite needs no database server | `main.py`, `src/model.py` |
+
+| 1 | **Security** | Passwords are hashed with PBKDF2‑HMAC‑SHA256 using 100,000 iterations and a unique 16‑byte random salt for each user. Comparisons are done in time with hmac.compare_digest to avoid timing attacks. Destructive actions are guarded by role‑based checks. All SQL is parameterised to stop injection. Passwords can be read from environment variables or a hidden prompt so they never show up in history. | `Src/auth.py` `src/records.py` |
+
+| 2 | **Error handling** | Custom error types AuthError, PreprocessingError, DetectionError, VideoError are defined. If a file cannot be read the system skips it of stopping the whole batch. The main program catches any error prints a clear message and exits with a specific code: 0 for success 1 for a general error, 2 for authentication failure. | `Main.py` and all modules
+
+| 3 | **Logging & monitoring** | A single logger writes to a file that rotates when it reaches 2 MB keeping up to three files. It records every detection, login, data change and error with time and level. The screen only shows warnings or higher so the command line stays clear. | `Src/logger_setup.py`
+
+| 4 | **Performance** | A small CNN with 200,000 parameters trains in less than one minute on a CPU. The Haar cascade is much lighter than a detector. The --every‑n option skips frames to reduce video processing costs. The trained model and cascade are loaded once and stored globally not for each image. | `Src/model.py` `src/detection.py` `src/video_stream.py` |
+
+| 5 | **Reliability** | The system does not fail silently. If no trained model exists it throws an error that tells the user what to do. If no face is found it uses the image and marks this in the output. Try/ blocks make sure that video capture and writing are closed even if an error or interrupt happens. | `Src/detection.py` `src/video_stream.py` |
+
+| 6 | **Maintainability** | Modules have one job each and the code is split into layers. All adjustable settings live in config.py. Type hints and docstrings are everywhere. There are 42 unit tests and naming is consistent. | Whole project |
+
+| 7 | **Usability & resource efficiency** | Every subcommand shows a message with --help. The init command works with no arguments. By default the program runs without opening a window so it works over SSH; you can enable a display, with --display. TensorFlow is loaded when needed making commands like records start quickly. SQLite is used directly. No database server is required. | `Main.py` `src/model.py` |
 
 ---
 
 ## 10. Using a real dataset
 
-The default pipeline trains on **synthetic generated images** so the project is
-runnable with zero downloads. For realistic accuracy, substitute a real
-dataset — for example the widely used *Face Mask Detection* dataset on Kaggle.
+The default pipeline trains on ** generated images**. Because of that you can run the project without downloading any data. If you want accuracy replace the synthetic generated images with a real dataset. For example the widely used *Face Mask Detection* dataset on Kaggle.
 
 Arrange the images in this structure:
 
@@ -421,78 +424,59 @@ Tests run against a temporary SQLite database, so your real data is untouched.
 
 ## 12. Troubleshooting
 
-**`ModuleNotFoundError: No module named 'cv2'` / `'tensorflow'`**
-The virtual environment is not active or dependencies were not installed.
-Re-run Step 2 and Step 3 of Setup.
+**`ModuleNotFoundError: No module named 'cv2' / 'tensorflow'`**
+
+You might see this error if the virtual environment is not active or if the required libraries were not installed.
+
+Re‑run Step 2. Step 3 of Setup.
 
 **`[SETUP REQUIRED] No trained model is available...`**
-Run `python train_model.py --epochs 15` first. Detection deliberately refuses to
-classify without a trained model rather than emitting unreliable guesses.
+
+Run `python train_model.py --epochs 15`. Detection deliberately refuses to classify unless a trained model exists, of giving unreliable guesses.
 
 **TensorFlow prints `oneDNN` / `AVX2` messages at startup**
-These are informational, not errors. Silence them with:
+
+You might notice that TensorFlow prints these messages at startup. These messages are not errors. Silence them with:
+
 ```bash
+
 export TF_CPP_MIN_LOG_LEVEL=2
+
 ```
 
 **`Could not open video source: 0`**
-No webcam is available (common on servers). Use a video file with
-`--source path/to/clip.mp4` instead.
+
+You might notice that no webcam is available which is common on servers. Use a video file with `--source path/to/clip.mp4`
 
 **`cv2.error` mentioning a display or GTK when using `--display`**
-You are on a headless machine. Drop `--display` and use `--output` to write an
-annotated video file instead.
 
-**Detection reports `[whole-image]` instead of a face box**
-No face was located, so the whole frame was classified as one region. This is
-expected for the synthetic sample images and for tightly cropped face photos.
-See [Known limitations](#13-known-limitations).
+You might notice that you are on a machine. Drop `--display`. Use `--output` to write an annotated video file instead.
+
+**Detection reports `[image]` instead of a face box**
+
+You might see that no face was located so the whole frame was classified as one region. This is expected for synthetic sample images and for cropped face photos. See [Known limitations](#13-known-limitations).
 
 **Permission errors writing to `logs/` or `database/`**
-Run from the project root so the relative paths in `config.py` resolve, and
-ensure your user can write to the project directory.
+
+You might see permission errors when writing to `logs/` or `database/`. Run from the project root so that the relative paths, in `config.py` resolve and ensure your user can write to the project directory.
 
 ---
 
 ## 13. Known limitations
 
-Stated openly, since honest evaluation is part of the project:
+Stated openly since honest evaluation is part of the project:
 
-1. **The synthetic dataset is trivially separable.** Held-out accuracy lands
-   between 0.94 and 1.00 (measured across three runs at 15 epochs) because the
-   generated "masked" images contain a flat coloured rectangle that the CNN
-   learns almost immediately. **These numbers should not be read as real-world
-   accuracy.** Use a real dataset ([Section 10](#10-using-a-real-dataset)) for a
-   meaningful figure. Training for too few epochs (8) drops accuracy to ~0.875,
-   so the `--epochs 15` default in the quick start is the recommended setting.
+1. **The synthetic dataset is trivially separable.** Held-out accuracy lands between 0.94 and 1.00 (measured across three runs at 15 epochs) because the generated "masked" images contain a coloured rectangle that the CNN learns almost immediately. **These numbers should not be read as real-world accuracy.** Use a dataset ([Section 10](#10-using-a-real-dataset)) for a meaningful figure. Training for few epochs (8) drops accuracy to around 0.875 so the `--epochs 15` default in the quick start is the recommended setting.
 
-2. **Haar cascades only reliably detect frontal, unoccluded faces.** Profile
-   views, strong backlighting and heavy occlusion cause misses. A mask itself
-   occludes part of the face, so masked people are detected somewhat less
-   reliably than unmasked ones. A modern detector (MTCNN, YOLO-face, or
-   OpenCV's DNN face detector) would improve recall at a higher compute cost.
+2. **Haar cascades only reliably detect unoccluded faces.** Profile views, strong backlighting and heavy occlusion cause misses. A mask itself occludes part of the face masked people are detected somewhat less reliably than unmasked ones. A modern detector (MTCNN, YOLO-face or OpenCVs DNN face detector) would improve recall at a compute cost.
 
-3. **Haar does not detect the bundled synthetic sample images at all**, because
-   they are schematic drawings rather than photographs. The whole-image
-   fallback covers this case and is explicitly flagged as `[whole-image]` in
-   the output so it is never mistaken for a genuine face detection.
+3. **Haar does not detect the bundled synthetic sample images at all** because they are drawings rather than photographs. The whole-image fallback covers this case. Is explicitly flagged as `[whole-image]` in the output so it is never mistaken for a genuine face detection.
 
-4. **Classification requires a trained model — the system will not guess.** An
-   earlier version fell back to an edge-density heuristic when no model was
-   present. Measurement showed the two classes' edge-density distributions
-   overlapped completely, and it labelled all six sample images `with_mask`,
-   including the three unmasked ones. Since a wrong `with_mask` is a violation
-   nobody gets alerted to, that fallback was removed. `detect-image` and
-   `detect-video` now exit with code 1 and an instruction to run
-   `train_model.py` instead.
+4. **Classification requires a trained model. The system will not guess.** An earlier version fell back to an edge-density heuristic when no model was present. Measurement showed the two classes edge-density distributions overlapped completely. It labelled all six sample images `with_mask` including the three unmasked ones. Since a wrong `with_mask` is a violation nobody gets alerted to that fallback was removed. `Detect-image` and `detect-video` now exit with code 1. An instruction to run `train_model.py` instead.
 
-5. **No face recognition or identity tracking.** The system counts compliance
-   events; it does not identify individuals or track a person across frames.
-   This is a deliberate privacy-preserving scope decision.
+5. **No face. Identity tracking.** The system counts compliance events; it does not identify individuals. Track a person across frames. This is a privacy-preserving scope decision.
 
-6. **Single-machine scope.** SQLite and a local file system are appropriate for
-   one camera and a coursework deployment. A multi-camera deployment would need
-   a client/server database and a job queue.
+6. **Single-machine scope.** SQLite and a local file system are appropriate, for one camera and a coursework deployment. A multi-camera deployment would need a client/server database and a job queue.
 
 ---
 
@@ -503,6 +487,6 @@ Submitted as academic coursework for the Computer Vision course.
 ## Author 
 
 - Name : Manthan Awagan
-- Reg. No. : 24BAI10381
+- Registration Id : 24BAI10381
 - Course : Computer Vision
-- Date : 16 Sept 2026
+- Date : 18 Sept 2026
